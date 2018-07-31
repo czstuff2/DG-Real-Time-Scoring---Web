@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+		<meta name='viewport' content="width=device-width, initial-scale=1, maximum-scale=1" />
+    
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+    
+    <link rel="stylesheet" href="http://cz-stuff.com/ccjquery/css/index.css" />
+    
+</head>
+
+<body>
+<div id="scorecards" data-role="page">
+    		<div data-role="header">
+            	<h3> Scorecards </h3>
+            		<a href="#createscorecard" rel="external" data-icon="gear" data-iconpos="right" data-theme="b" class="ui-btn-right">Create</a>
+            </div>
+            <div data-role="content" data-theme="b" id="pageContent">
+              <div data-role="collapsible-set" id="scorecardCollapse" name="scorecardCollapse">
+                
+              </div>
+            	
+            	<ul class="ui-listview" id="scorekeeperlist" data-inset='true' data-role="listview" data-split-theme="a" data-theme="b">
+          	  </ul>
+            </div>
+</div>
+<div data-role="page" id="createscorecard" data-theme="b">
+            <div data-role="header" data-theme="b">
+            	<h1>Create Scorecard</h1>
+                	<a href="javascript:goBack()" rel="external" data-icon="back" data-iconpos="right" data-theme="b" class="ui-btn-right">Back</a>
+          	</div>
+            <div data-role="content">
+            	<div data-role="fieldcontain">
+                	<label for="select-choice-0" class="select">Scorekeeper:</label>
+                    <select name="select-choice-0" id="select-choice-0" data-native-menu="false" data-theme="a">
+                    </select>
+                    <label for="select-choice-1" class="select">Scorecard:</label>
+                    <select name="select-choice-1" id="select-choice-1" multiple="multiple" data-native-menu="false" data-theme="a">
+                    </select>
+                    <div data-role="fieldcontain" style="display:none" id="hiddenbuttons">
+                    	<a href="javascript:pushScoreCard()" data-role="button" data-icon="check" data-inline="true" >Create</a>
+                        <a href="javascript:goBack()" data-role="button" data-icon="delete" data-inline="true" >Cancel</a>
+                    </div>
+                </div>
+            </div>
+</div>
+
+<script = type="text/javascript">
+var PLAYERS1;
+var SCORECARDS;
+var ALLPLAYERS;
+var scoreKeeperSet = 0;
+			
+	function goBack() {
+	$.mobile.changePage("http://cz-stuff.com/ccjquery/scorecards.html", { reloadPage : 'true' });
+	return false;
+}
+	function goEdit(scorecardNumber) {
+	sessionStorage.setItem("SCORECARD", JSON.stringify(SCORECARDS[scorecardNumber]));
+	sessionStorage.setItem("PLAYERS", JSON.stringify(PLAYERS1));
+	sessionStorage.setItem("ALLPLAYERS", JSON.stringify(ALLPLAYERS));	
+	$.mobile.changePage( "http://cz-stuff.com/ccjquery/editscorecards.html", {
+  changeHash: true
+});
+}
+	$( document ).on( "pageshow", function( event ) {
+		getScorecards();
+		getScorecardLessPlayers(); 
+		getAllPlayers();
+	});
+	
+	$( '#createscorecard' ).on( "pageinit", function( event ) {
+		
+		var last_valid_scorekeeper = new Array(2);
+		var last_valid_selection = null;
+		
+		$('#select-choice-0').selectmenu('refresh');
+		$('#select-choice-1').selectmenu('refresh');
+
+		$('#select-choice-1').change(function(event) {
+		  if ($(this).val().length >= 4) {
+			alert('You can only choose 4!');
+			$(this).val(last_valid_selection);
+		  } else {
+			last_valid_selection = $(this).val();
+		  }
+		 	$('#hiddenbuttons').show();
+		  
+		  
+		});
+		$('#select-choice-0').change(function(event) {
+			
+			var selectedKeeper = $(this).val();
+			if(scoreKeeperSet == 0) {
+			  last_valid_scorekeeper[0] = selectedKeeper;
+			  last_valid_scorekeeper[1] = $('#select-choice-1 option[value="' + selectedKeeper + '"]').html();
+			  $('#select-choice-1 option[value="' + selectedKeeper + '"]').remove();
+			  $('#select-choice-1 option[id="placeholder"]').remove();
+			  $('#select-choice-1').selectmenu('refresh', true);
+			  scoreKeeperSet = 1;
+			}
+			if(scoreKeeperSet == 1) {
+				if(last_valid_scorekeeper[0] !== selectedKeeper) {
+					var stringKeeper = '<option id="option"'+last_valid_scorekeeper[0]+'" value="'+last_valid_scorekeeper[0]+'">' + last_valid_scorekeeper[1] + '</option>'; 
+					$('#select-choice-1').append(stringKeeper);
+					last_valid_scorekeeper[0] = selectedKeeper;
+			  		last_valid_scorekeeper[1] = $('#select-choice-1 option[value="' + selectedKeeper + '"]').html();
+					$('#select-choice-1 option[value="' + selectedKeeper + '"]').remove();
+					$('#select-choice-1').selectmenu('refresh', true);
+					$('#select-choice-0').selectmenu('refresh', true);
+						
+				}
+			}
+		});
+		
+		
+		
+		
+	});
+	$("#createscorecard").on("pageshow", function(e, data){
+		scoreKeeperSet = 0;
+            var PLAYERS = JSON.parse(sessionStorage.getItem("PLAYERS"));
+            sessionStorage.removeItem("PLAYERS"); 
+			console.log(PLAYERS);
+			if (PLAYERS == null) {
+				alert("No more players to add");
+				goBack();
+				return false;
+			}
+			var addthis = document.getElementById('select-choice-1');
+		var string = '<option id="placeholder">Select Scorekeeper</option>';
+		var string2 = '';
+		for (i=0;i<PLAYERS.length;i++) {
+			var player = PLAYERS[i];
+			var player_id = player.player_id;
+			var player_name = player.name;
+			 
+		 string += '<option id="option"'+player_id+'" value="'+player_id+'">' + player_name + '</option>';
+		 string2 += '<option id="option"'+player_id+'" value="'+player_id+'">' + player_name + '</option>'; 
+		}
+		addthis.innerHTML = string2;
+		document.getElementById('select-choice-0').innerHTML = string;
+		$('#select-choice-0').selectmenu('refresh', true);
+		$('#select-choice-1').val('').selectmenu('refresh', true);
+
+		
+        });
+		
+	
+  	
+	function getScorecards() {
+		$.ajax({
+			url: "http://cz-stuff.com/ccjquery/php/getcards.php",
+			type: "GET",
+			async:true,
+			dataType:"json",
+			
+			success: function( json ) {
+				SCORECARDS = json;
+				
+			
+			},
+			error: function ( xhr, status) {
+				console.log( xhr.HTML ) ;
+			},
+			complete: function ( xhr, status) {
+			}
+		})
+	}
+	function getAllPlayers() {
+		$.ajax({
+			url: "http://cz-stuff.com/ccjquery/php/getallplayers.php",
+			type: "GET",
+			dataType:"json",
+			async:true,
+			success: function( json ) {
+				ALLPLAYERS = json;
+				getPageContent();
+			},
+			error: function ( xhr, status) {
+				console.log( xhr.HTML ) ;
+			}
+		})
+		
+	}
+	function getScorecardLessPlayers() {
+		$.ajax({
+			url: "http://cz-stuff.com/ccjquery/php/scorecardlessplayers.php",
+			type: "GET",
+			dataType:"json",
+			async:true,
+			success: function( json ) {
+				PLAYERS1 = json;
+				sessionStorage.setItem("PLAYERS", JSON.stringify(json));
+			},
+			error: function ( xhr, status) {
+				console.log( xhr.HTML ) ;
+			}
+		})
+	}
+	
+	function pushScoreCard() {
+		var playersKeeper = $('#select-choice-0').val();
+		var playersDB = $('#select-choice-1').val();
+		var playersByID = new Array();
+		playersByID[0] = parseInt(playersKeeper);
+		for (i = 0; i < playersDB.length; i++){
+			playersByID[i + 1] = parseInt(playersDB[i]);
+		}
+		console.log(playersByID);
+		$.ajax({
+			url: "http://cz-stuff.com/ccjquery/php/pushScoreCard.php",
+			data: {
+				 playerArray : playersByID
+			},
+			type: "POST",
+			async:true,
+			dataType:"json",
+			
+			success: function( json ) {
+				alert(json);
+				goBack();
+				
+			},
+			error: function ( xhr, status) {
+			},
+			complete: function ( xhr, status) {
+			}
+			});
+
+	}
+	function getPageContent() {
+		if (SCORECARDS == "No cards found.")
+					return;
+				var cardsFound = "";
+				for(j = 0; j <SCORECARDS.length;j++) {
+					var cardName = "Scorecard #" + (j+1);
+					cardsFound = "<div data-role='collapsible' data-theme='b'><h3>" + cardName + "</h3><ul data-role='listview' class='ui-listview' id='cardlist'" + j + "'>";
+				for(i = 0; i <Object.keys(SCORECARDS[j]).length;i++) {
+					if (i == 0) {
+						var playerName = ALLPLAYERS[SCORECARDS[j]['player_id']];
+						console.log("Added SCOREKEEPER");
+						cardsFound += '<li>Scorekeeper: ' + playerName + '</li>';
+					} else {
+						var string = "player" +(i);
+						
+						if (SCORECARDS[j][string] == null) {
+							console.log("Returning");
+							cardsFound += "</ul>";
+							cardsFound += "<div id='scorecardbuttons'" +j+"' data-role='fieldcontain' id='editbuttons'><a href='javascript:goEdit("+j+")' data-inline='true' data-role='button' data-icon='gear'>Edit</a></div></div>";
+							$('#scorecardCollapse').append(cardsFound);
+							
+							break;
+						} else {
+							var playerName = ALLPLAYERS[SCORECARDS[j][string]];
+							console.log("Added " + string);
+						cardsFound += '<li>Player: ' + playerName + '</li>';
+						}
+					}
+					
+				}
+				}
+				
+					$('#pageContent').trigger('create');
+	}
+</script>
+</body>
+</html>

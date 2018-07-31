@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+    <title>View Source</title>
+    
+   	<meta name='viewport' content="width=device-width, initial-scale=1, maximum-scale=1" />
+    
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://cz-stuff.com/ccjquery/js/index.js"></script>
+	<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+    
+    
+    
+    <link rel="stylesheet" href="http://cz-stuff.com/ccjquery/css/index.css" />
+	
+    
+</head>
+<body>
+    <div id="home" data-role="page">
+    	<div data-role="header" data-theme="a">
+        	<h1>Home</h1>
+            <a href="#weeklysignup" data-icon="arrow-r" data-iconpos="right" data-iconshadow="true" class="ui-btn-right" data-theme="b">Signups</a>
+        </div>
+    	<p><strong>Welcome to the View Source App</strong></p>
+    </div>
+    <div id="registerPlayers" data-role="page">
+    	<div data-role="header">
+        	<h1>Register Players</h1>
+            <a href="#home" data-icon="home" data-iconpos="notext" data-theme="b">Home</a>
+        </div>
+    	<p>Fill with register players</p>
+        <a href="#home">Home</a>
+    </div>
+    <div id="weeklysignup" data-role="page">
+    	<div data-role="header">
+        	<h1>Signup</h1>
+            <a href="#home" data-icon="home" data-iconpos="notext" data-theme="b">Home</a>
+            <a href="javascript:goToScorecards()" data-icon="arrow-u" data-iconpos="right" data-theme="b">Scorecards</a>
+        </div>
+        <div data-role="content">
+        	<div data-role="fieldcontain" class="ui-hide-label">
+				<label for="username">Name:</label>
+				<input type="text" id="username" value="" placeholder="Username" onKeyUp="showHint(this.value)"/>
+			</div>
+            <ul data-role="listview" class="ui-listview" id="playerlist">
+            </ul>
+            </div>
+        </div>
+    </div>
+    <div id="scorecards" data-role="page">
+    		<div data-role="header">
+        	<h1>Add to Card</h1>
+            <a href="#home" data-icon="home" data-iconpos="notext" data-theme="b">Home</a>
+            </div>
+            <div data-role="content">
+            	<ul data-role="listview" class="ui-listview" id="scorekeeperlist">
+            	</ul>
+            </div>
+            <div data-role="fieldcontain" style="display:none" id="divsk">
+                <label for="scorekeeperName">Scorekeeper:</label>
+            	<input disabled="true" type="text" id="scorekeeperName" value="" placeholder="Name"/>
+                <span id="cancelsavebtns">
+                <a href='index.html' data-role='button'>Cancel</a>
+                <a href='index.html' data-role='button' data-theme="b">Save</a>
+                </span>
+            </div>
+            <div data-role="fieldcontain" style="display:none" id="divp1">
+                <label for="player1Name">Player 1:</label>
+            	<input disabled="true" type="text" id="player1Name" value="" placeholder="Name"/>
+                <span id="cancelsavebtnsp1">
+                <a href='index.html' data-role='button'>Cancel</a>
+                <a href='index.html' data-role='button' data-theme="b">Save</a>
+                </span>
+            </div>
+            <div data-role="fieldcontain" style="display:none" id="divp2">
+                <label for="player2Name">Player 2:</label>
+            	<input disabled="true" type="text" id="player2Name" value="" placeholder="Name"/>
+                <span id="cancelsavebtnsp2">
+                <a href='index.html' data-role='button'>Cancel</a>
+                <a href='index.html' data-role='button' data-theme="b">Save</a>
+                </span>
+            </div>
+            <div data-role="fieldcontain" style="display:none" id="divp3">
+                <label for="player3Name">Player 3:</label>
+            	<input disabled="true" type="text" id="player3Name" value="" placeholder="Name"/>
+                <span id="cancelsavebtns3">
+                <a href='index.html' data-role='button'>Cancel</a>
+                <a href='index.html' data-role='button' data-theme="b">Save</a>
+                </span>
+            </div>
+            <div data-role="fieldcontain" style="display:none" id="divp4">
+                <label for="player4Name">Player 4:</label>
+            	<input disabled="true" type="text" id="player4Name" value="" placeholder="Name"/>
+                <span id="cancelsavebtns4">
+                <a href='index.html' data-role='button'>Cancel</a>
+                <a href='index.html' data-role='button' data-theme="b">Save</a>
+                </span>
+            </div>
+            </div>
+    </div>
+            
+    
+    <script>
+	var scoreCard = new Array(5);
+	var scoreCardCount = 0;
+	$( document ).on( "pageinit", "#scorecards", function( event ) {
+		getScorecardLess();
+	});
+  	
+	function getScorecardLess() {
+		$.ajax({
+			url: "http://cz-stuff.com/ccjquery/php/scorecardlessplayers.php",
+			type: "GET",
+			
+			dataType:"json",
+			
+			success: function( json ) {
+				var playersids = new Array;
+				var listadds = new Array;
+				for (var i = 0; i < json.length; i++) {
+					playersids = json[i];
+					listadds[i] = addEligiblePlayers( playersids );
+					$('#scorekeeperlist').append(listadds[i]);
+				}
+				$('#scorekeeperlist').listview('refresh');
+			},
+			error: function ( xhr, status) {
+				console.log( xhr.HTML ) ;
+			},
+			complete: function ( xhr, status) {
+			}
+		})
+  
+	}
+	function addEligiblePlayers( playersids ) {
+		var string = '<li id="player';
+		string = string + playersids[0];
+		string = string + '" "class="ui-li-has-icon" data-icon="check"><a href="javascript:addPlayerToScorecard(\'' + playersids + '\')" class="ui-link-inherit">' + playersids[1] + '</a></li>';
+		return (string);	
+	//$('#scorekeeperlist').append('<li class="ui-li-has-icon" data-icon="check"><a href="javascript:addPlayerToScorecard(\'' + playersids + '\')" class="ui-link-inherit">' + playersids + '</a></li>');
+	
+}
+
+	function addPlayerToWeek(id) {
+	$.ajax({
+			url: "http://cz-stuff.com/ccjquery/php/addplayertoweek.php",
+			data: {
+				ids: id
+			},
+			type: "POST",
+			
+			dataType:"json",
+			
+			success: function( json ) {
+				alert("Player successfully added");
+			},
+			error: function ( xhr, status) {
+			},
+			complete: function ( xhr, status) {
+				
+			}
+			});
+	
+}
+function addPlayerToScorecard( id ) {
+	
+	var player = id.split(',');
+	switch (scoreCardCount) {
+		case 0: 
+			scoreCard[0] = player[0];
+			document.getElementById('scorekeeperName').value = player[1];
+			$('#divsk').show("fast");
+			
+			
+			
+			
+		break;
+		case 1:
+			document.getElementById('cancelsavebtns').innerHTML = "";
+			scoreCard[1] = player[0];
+			document.getElementById('player1Name').value = player[1];
+			$('#divp1').show("fast");
+		break;
+		case 2: 
+			document.getElementById('cancelsavebtnsp1').innerHTML = "";
+			scoreCard[2] = player[0];
+			document.getElementById('player2Name').value = player[1];
+			$('#divp2').show("fast");
+		break;
+		case 3:
+			document.getElementById('cancelsavebtnsp2').innerHTML = "";
+			scoreCard[3] = player[0];
+			document.getElementById('player3Name').value = player[1];
+			$('#divp3').show("fast");
+		break;
+		case 4:
+			document.getElementById('cancelsavebtns3').innerHTML = "";
+			scoreCard[4] = player[0];
+			document.getElementById('player4Name').value = player[1];
+			$('#divp4').show("fast");
+		break;
+	}
+		
+	var string = "player";
+	string += player[0];
+	var listitem = document.getElementById(string).innerHTML = "";
+	scoreCardCount++;
+	
+	
+	
+}
+function goToScorecards() {
+	$.mobile.changePage("http://cz-stuff.com/ccjquery/scorecards.html", { reloadPage : 'true' });
+	return false;
+}
+
+
+</script>
+</body>
+
